@@ -172,7 +172,8 @@ int main(int argc, char* argv[])
 {
     std::string sun3d_dir = "D:/Uni/ToFML/Datasets/SUN3D/brown_bm_1/brown_bm_1/";
     std::string outFile = "output.sens";
-
+    int startFrame = 0;
+    int endFrame = 0;
 #ifndef _DEBUG
     if (argc >= 2) sun3d_dir = std::string(argv[1]);
     else {
@@ -182,7 +183,18 @@ int main(int argc, char* argv[])
     if (argc >= 3) {
         outFile = std::string(argv[2]);
     }
+    if (argc >= 4) {
+        startFrame = std::stoi(argv[3]);
+    }
+    if (argc >= 5) {
+        endFrame = std::stoi(argv[4]);
+    }
 #endif
+
+    if (endFrame == 0) {
+        std::cout << "Specify endframe" << std::endl;
+        return 0;
+    }
     std::string color_dir = sun3d_dir + "/image/";
     std::string depth_dir = sun3d_dir + "/depth/";
 
@@ -270,11 +282,23 @@ int main(int argc, char* argv[])
     // write Sens frames
 
     //std::uint64_t numFrames = sun3dFrames.size();
-    std::uint64_t numFrames = 500;
+    std::uint64_t numFrames = sun3dFrames.size();
+
+
+    if (endFrame != 0) {
+        if (endFrame < numFrames) {
+            numFrames = endFrame - startFrame;
+        } else {
+            std::cerr << "Number of frames exceeds frames in folder!" << std::endl;
+            return 1;
+        }
+    }
+
     outfile.write((const char*)&numFrames, sizeof(std::uint64_t));
 
     outfile.flush();
-    for (int i = 0; i < numFrames; i++) {
+    int j = 0;
+    for (int i = startFrame; i < endFrame; i++) {
         SUN3D_ImageInfo colorInfo = sun3dFrames.at(i).colorImage;
         SUN3D_ImageInfo depthInfo = sun3dFrames.at(i).depthImage;
 
@@ -325,7 +349,8 @@ int main(int argc, char* argv[])
         stbi_image_free(depthImage);
         delete[] colorImage;
 
-        printf("%d of %d frames written\r", i, numFrames);
+        printf("%d of %d frames written\r", j, numFrames);
+        j++;
     }
 
     char zero = 0;
